@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Maintenance Log</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>🚗 Car Maintenance Log</h1>
+            <div class="header-actions">
+                <select id="carSelector" class="car-selector">
+                    <option value="">Select a car...</option>
+                </select>
+                <button id="addCarBtn" class="btn btn-primary">+ Add Car</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs">
+        <button class="tab-btn active" data-view="dashboard">Dashboard</button>
+        <button class="tab-btn" data-view="maintenance">Maintenance Log</button>
+        <button class="tab-btn" data-view="charts">Charts</button>
+        <button class="tab-btn" data-view="settings">Settings</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="view active">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h2>Current Car</h2>
+                    <div id="currentCarInfo" class="car-info">
+                        <p class="empty-state">No car selected</p>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h2>Upcoming Maintenance</h2>
+                    <div id="upcomingMaintenance" class="maintenance-list">
+                        <p class="empty-state">No upcoming maintenance</p>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h2>Recent Maintenance</h2>
+                    <div id="recentMaintenance" class="maintenance-list">
+                        <p class="empty-state">No maintenance records</p>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <h2>Statistics</h2>
+                    <div id="dashboardStats" class="stats">
+                        <p class="empty-state">No data available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Log View -->
+        <div id="maintenanceView" class="view">
+            <div class="view-header">
+                <h2>Maintenance Records</h2>
+                <button id="addMaintenanceBtn" class="btn btn-primary">+ Add Maintenance</button>
+            </div>
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Search maintenance..." class="search-input">
+                <select id="typeFilter" class="filter-select">
+                    <option value="">All Types</option>
+                </select>
+                <select id="sortSelect" class="filter-select">
+                    <option value="date-desc">Date (Newest)</option>
+                    <option value="date-asc">Date (Oldest)</option>
+                    <option value="cost-desc">Cost (High to Low)</option>
+                    <option value="cost-asc">Cost (Low to High)</option>
+                    <option value="type">Type</option>
+                </select>
+            </div>
+            <div id="maintenanceTable" class="maintenance-table-container">
+                <table class="maintenance-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Cost</th>
+                            <th>Mileage</th>
+                            <th>Service Provider</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maintenanceTableBody">
+                        <tr>
+                            <td colspan="6" class="empty-state">No maintenance records found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Charts View -->
+        <div id="chartsView" class="view">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Maintenance Cost Over Time</h3>
+                    <canvas id="costChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Maintenance Frequency by Type</h3>
+                    <canvas id="frequencyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Total Spending per Car</h3>
+                    <canvas id="spendingChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Mileage Tracking</h3>
+                    <canvas id="mileageChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view">
+            <div class="settings-section">
+                <h2>Car Management</h2>
+                <div id="carsList" class="cars-list">
+                    <p class="empty-state">No cars added yet</p>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h2>Custom Maintenance Types</h2>
+                <button id="addCustomTypeBtn" class="btn btn-secondary">+ Add Custom Type</button>
+                <div id="customTypesList" class="custom-types-list">
+                    <p class="empty-state">No custom types added</p>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h2>Data Management</h2>
+                <div class="data-actions">
+                    <button id="exportDataBtn" class="btn btn-secondary">Export Data (JSON)</button>
+                    <button id="importDataBtn" class="btn btn-secondary">Import Data (JSON)</button>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                    <button id="clearDataBtn" class="btn btn-danger">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Add/Edit Car Modal -->
+    <div id="carModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="carModalTitle">Add Car</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="carForm" class="modal-form">
+                <input type="hidden" id="carId">
+                <div class="form-group">
+                    <label for="carMake">Make *</label>
+                    <input type="text" id="carMake" required>
+                </div>
+                <div class="form-group">
+                    <label for="carModel">Model *</label>
+                    <input type="text" id="carModel" required>
+                </div>
+                <div class="form-group">
+                    <label for="carYear">Year *</label>
+                    <input type="number" id="carYear" min="1900" max="2099" required>
+                </div>
+                <div class="form-group">
+                    <label for="carVin">VIN</label>
+                    <input type="text" id="carVin" maxlength="17">
+                </div>
+                <div class="form-group">
+                    <label for="carLicensePlate">License Plate</label>
+                    <input type="text" id="carLicensePlate">
+                </div>
+                <div class="form-group">
+                    <label for="carPurchaseDate">Purchase Date</label>
+                    <input type="date" id="carPurchaseDate">
+                </div>
+                <div class="form-group">
+                    <label for="carCurrentMileage">Current Mileage</label>
+                    <input type="number" id="carCurrentMileage" min="0" step="1">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Maintenance Modal -->
+    <div id="maintenanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="maintenanceModalTitle">Add Maintenance</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="maintenanceForm" class="modal-form">
+                <input type="hidden" id="maintenanceId">
+                <div class="form-group">
+                    <label for="maintenanceDate">Date *</label>
+                    <input type="date" id="maintenanceDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceType">Type *</label>
+                    <select id="maintenanceType" required>
+                        <option value="">Select type...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceCost">Cost ($)</label>
+                    <input type="number" id="maintenanceCost" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceMileage">Mileage</label>
+                    <input type="number" id="maintenanceMileage" min="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceProvider">Service Provider</label>
+                    <input type="text" id="maintenanceProvider">
+                </div>
+                <div class="form-group">
+                    <label for="maintenanceNotes">Notes</label>
+                    <textarea id="maintenanceNotes" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="setReminder">
+                        Set Reminder
+                    </label>
+                </div>
+                <div id="reminderFields" class="reminder-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="reminderInterval">Next Due (months)</label>
+                        <input type="number" id="reminderInterval" min="1" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="reminderMileage">Next Due (miles)</label>
+                        <input type="number" id="reminderMileage" min="0" step="100">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Custom Type Modal -->
+    <div id="customTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customTypeModalTitle">Add Custom Type</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="customTypeForm" class="modal-form">
+                <input type="hidden" id="customTypeId">
+                <div class="form-group">
+                    <label for="customTypeName">Type Name *</label>
+                    <input type="text" id="customTypeName" required>
+                </div>
+                <div class="form-group">
+                    <label for="customTypeInterval">Default Interval (months)</label>
+                    <input type="number" id="customTypeInterval" min="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label for="customTypeMileage">Default Mileage Interval</label>
+                    <input type="number" id="customTypeMileage" min="0" step="100">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirm Action</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure?</p>
+            </div>
+            <div class="form-actions">
+                <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
+                <button id="confirmOk" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
